@@ -1,6 +1,5 @@
 package me.cire3;
 
-import me.cire3.skyblock.objects.ci.Attribute;
 import net.querz.nbt.io.NBTDeserializer;
 import net.querz.nbt.io.NamedTag;
 import org.apache.commons.codec.binary.Base64;
@@ -13,13 +12,16 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
-//
 
+/**
+ * This class is used to find where certain informations about an item are stored.
+ * Mainly for dumping the json data
+ * */
 public class TestClass {
+
     public static void main(String[] args) throws IOException {
         String apiKey = ApiKeyManager.getApiKey();
-        String address = "https://api.hypixel.net/v2/skyblock/auction?key=" + apiKey + "&uuid=d17a1a08d4c5461f811497b797e0a4b9";
+        String address = "https://api.hypixel.net/v2/skyblock/auction?key=" + apiKey + "&uuid=3e20c776ecd94729b5056443ebdee065";
         URL url = new URL(address);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");
@@ -43,35 +45,13 @@ public class TestClass {
 
         try(ByteArrayInputStream byt = new ByteArrayInputStream(buf)) {
             NamedTag tag = new NBTDeserializer(true).fromStream(byt);
-            boolean hasAttributes = tag.getTag().toString().contains("ExtraAttributes");
+            String tagString = tag.getTag().toString();
 
-            if (hasAttributes) {
-                JSONObject testObj = new JSONObject(tag.getTag().toString());
-                JSONObject attributesObject = testObj.getJSONObject("value").getJSONObject("i").getJSONObject("value")
-                        .getJSONArray("list").getJSONObject(0).getJSONObject("tag").getJSONObject("value")
-                        .getJSONObject("ExtraAttributes").getJSONObject("value").getJSONObject("attributes")
-                        .getJSONObject("value");
-                Set<String> attributes = attributesObject.keySet();
+            JSONObject extraAttribs = ItemCreator.getExtraAttributesJson(new JSONObject(tagString));
 
-                if (attributes.size() != 2) {
-                    // wtf
-                } else {
-                    Attribute attr1 = null, attr2 = null;
-                    for (String attrib : attributes) {
-                        Attribute attr = new Attribute(attrib, attributesObject.getJSONObject(attrib).getInt("value"), attrib);
-                        if (attr1 != null)
-                            attr2 = attr;
-                        else
-                            attr1 = attr;
-                    }
+            boolean enchantments = tagString.contains("enchantments");
 
-                    if (attr2 != null) {
-                        System.out.println(attr1.friendlyName() + "   " + attr2.friendlyName());
-                    }
-                }
-            }
+            System.out.println(enchantments);
         }
-
-        // TODO, serialize this into an item
     }
 }
